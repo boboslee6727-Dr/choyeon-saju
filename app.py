@@ -12,7 +12,7 @@ import streamlit.components.v1 as components
 # ==============================================================================
 # 0. VIP 인셋 프레임 및 초강력 프린트 CSS 
 # ==============================================================================
-st.set_page_config(page_title="초연 전통명리 사주풀이 Ver 13.7", layout="wide")
+st.set_page_config(page_title="초연 전통명리 사주풀이 Ver 13.8", layout="wide")
 
 st.markdown("""
 <style>
@@ -58,7 +58,7 @@ st.markdown("""
     
     .header-cell-main { background-color: #E8EAF6 !important; color: #1A237E !important; font-weight: 900 !important; font-size: 12px !important; height: 22px !important; }
     
-    /* 최상단 헤더 순백색 영구 복원 (정석 CSS) */
+    /* 최상단 헤더 순백색 영구 복원 */
     .top-header-cell { background-color: #1A237E !important; height: 30px !important; }
     .top-header-cell td, .top-header-cell span { color: #FFFFFF !important; font-weight: 900 !important; font-size: 16px !important; }
     
@@ -308,7 +308,7 @@ def get_daeun_su_accurate(utc_dt, order):
 # ==============================================================================
 with st.sidebar:
     st.title("🧪 초연 임상 연구소")
-    st.caption("Ver 13.7 Masterpiece")
+    st.caption("Ver 13.8 Masterpiece")
     
     with st.expander("🔍 사주팔자 역산 검색", expanded=False):
         col_g1, col_g2 = st.columns(2)
@@ -366,7 +366,7 @@ with st.sidebar:
     u_t = st.selectbox("태어난 시간", idx_list, key="s_t")
     
     st.markdown("<br>", unsafe_allow_html=True)
-    btn_single = st.button("🚀 초연 전통명리 사주풀이", use_container_width=True, type="primary")
+    btn_single = st.button("🚀 초연 시공명리 사주풀이", use_container_width=True, type="primary")
     
     st.markdown("---")
     comp_text = st.text_area("비교할 타 술사 감명서 (선택)", height=150)
@@ -380,7 +380,7 @@ with st.sidebar:
 if btn_single or btn_compare:
     if btn_compare and not comp_text.strip(): st.warning("⚠️ 타 술사 감명서를 입력하세요.")
     else:
-        spinner_msg = "두 감명서를 1:1 상세 비교 분석 중...." if btn_compare else "초연 전통명리 사주풀이 분석 중..."
+        spinner_msg = "두 감명서를 1:1 상세 비교 분석 중...." if btn_compare else "초연 시공명리 사주풀이 분석 중..."
         
         with st.spinner(spinner_msg):
             klc = KoreanLunarCalendar()
@@ -417,7 +417,6 @@ if btn_single or btn_compare:
             disp_name = u_name if u_name.strip() else "홍길동"
             info_h = f"<div style='text-align:center; margin-bottom:20px;'><span style='font-size:20px; font-weight:900; color:#1A237E;'>🏮 {disp_name}님 ({u_gender}, {u_marital}, {u_age}세)</span><br><span style='font-size:16px; color:#333; font-weight:900;'>[양력: {sol_str} | 음력: {lun_str}{time_str}]</span></div>"
 
-            # [수술부위 1] 이중 용접하여 완벽한 흰색 글씨 고정
             table_html = f"""<table class='result-table'>
 <tr class='top-header-cell'>
 <td style='border:1px solid #444; color:#FFFFFF !important;'><span style='color:#FFFFFF !important; font-weight:900;'>구분</span></td>
@@ -440,7 +439,6 @@ if btn_single or btn_compare:
             
             calc_gyukgook = get_gyukgook(ds, ys, ms, hs, mb)
 
-            # [수술부위 - 신살 데이터 추출 및 가형(삼형살 대기) 판독기]
             gen_shinsal_list = []
             for i in range(4):
                 raw_tags = get_general_shinsal_filtered(i, gans, jjis)
@@ -451,7 +449,6 @@ if btn_single or btn_compare:
             s12_list = [get_12_shinsal(yb, j) for j in jjis if get_12_shinsal(yb, j) != "-"]
             s12_str = ", ".join(list(dict.fromkeys(s12_list))) if s12_list else "특이 12신살 없음"
             
-            # 가형(삼형살 대기) 폭탄 판독기
             samhyung_warn = ""
             has_in, has_sa, has_shin = '寅' in jjis, '巳' in jjis, '申' in jjis
             if sum([has_in, has_sa, has_shin]) == 2:
@@ -471,10 +468,8 @@ if btn_single or btn_compare:
             guiin_str = guiin_map.get(ds, '없음')
                 
             utc_dt = dt_mod.datetime(u_y, u_m, u_d, 12, 0) - dt_mod.timedelta(hours=9)
-            
             order = 1 if (GAN.index(ys)%2==0) == (u_gender=='남성') else -1
             direction_str = "순행" if order == 1 else "역행"
-            
             calc_d = get_daeun_su_accurate(utc_dt, order)
             n_gong = calculate_gongmang(ys, yb)
             i_gong = calculate_gongmang(ds, db)
@@ -493,9 +488,12 @@ if btn_single or btn_compare:
             un_html += "</div>"
             daewun_info_str = ", ".join(daewun_info)
 
+            # [수술부위 1] 파이썬 동적 '현재 대운' 추적 엔진
             cur_dw_idx = max(0, (u_age - calc_d) // 10)
             dw_g_cur = GAN[(GAN.index(ms) + (cur_dw_idx+1)*order)%10] if ms in GAN else "-"
             dw_j_cur = JI[(JI.index(mb) + (cur_dw_idx+1)*order)%12] if mb in JI else "-"
+            current_daewun_age = cur_dw_idx * 10 + calc_d
+            current_daewun_fact = f"{current_daewun_age}세 {dw_g_cur}{dw_j_cur}대운"
             
             sewun_info = []
             se_html = f"<div style='margin-top:20px; margin-bottom:10px; font-weight:bold;'>[ 세운의 흐름 ({dw_g_cur}{dw_j_cur}대운 기준) ]</div><div style='display:flex; flex-direction:row-reverse; width:100%; border:2px solid #3E2723; background:white; margin-bottom:5px;'>"
@@ -535,7 +533,7 @@ if btn_single or btn_compare:
 </div>
 </div>"""
 
-            # [수술부위 - 궁극의 14개조 강제 지시 프롬프트 뇌수 교체]
+            # [수술부위 2 & 3] 지시문 상단 격리 및 템플릿 정화
             prompt = f"""
 [절대 규칙]
 1. 현재 시스템 시간: 2026년(丙午년) {curr_m}월({cur_wol_g}{cur_wol_j}월)
@@ -552,14 +550,15 @@ if btn_single or btn_compare:
 - {disp_name}님의 격국(格局): {calc_gyukgook}
 - 공망(空亡): {i_gong} (성격 분석 시 이 실체적 결핍을 인종법과 함께 분석)
 - 일반신살: [{shinsal_str}] / 12신살: [{s12_str}]
-- [특명] 위 제공된 일반신살과 12신살을 십성 해석에 반드시 융합하십시오.
-- [경계령 1-저승사자] 12신살 중 '육해살, 천살, 겁살'이 원국이나 운에 있다면 불가항력적 위기/건강악화 등 예측불허의 작용을 엄중히 경고하십시오.
+- [경계령 1-저승사자] 12신살 중 '육해살, 천살, 겁살'이 원국이나 운에 있다면 예측불허의 작용을 엄중히 경고.
 - [경계령 2-삼형살 지뢰] {samhyung_warn}
-- [경계령 3-합충의 실체] 합(방합,삼합,육합)의 묶임/생산을 구체화하고, 진술축미는 단순 창고 타령을 금지하며, 충(沖)으로 개고(開庫)될 때 어떤 육친/재물이 튀어나와 변화를 일으키는지 정밀 분석하십시오.
-- [경계령 4-운의 동적 시뮬레이션] 대/세/월운에서 도화살(연살), 망신살, 역마살, 고신/과숙살이 들어올 때 현실에서 일어나는 사건(구설, 비밀노출, 이동, 이별수 등)을 생생하게 풀이하십시오.
-- 실제 대운 흐름: {daewun_info_str}
-- 실제 세운 흐름: {sewun_info_str}
+- [경계령 3-운의 동적 시뮬레이션] 운에서 도화살, 망신살, 역마살, 고신/과숙살 발현 시 구체적 사건 통변.
+- [경계령 4-시간의 현재성] 내담자의 현재 대운은 정확히 [{current_daewun_fact}]입니다. 과거 대운 풀이 시 엉뚱한 대운을 현재로 착각하지 마십시오.
+- [경계령 5-요약 누락 금지] 과거 대운, 세운, 월운 요약 시 절대로 중간(1월, 2월 등이나 초년 대운)을 건너뛰지 말고 1대운부터 현재 직전까지, 1월부터 순차적으로 단 하나도 빠짐없이 전수 요약하십시오.
+- [경계령 6-명리 달력의 엄격성] 월운 요약 시, 양력 1월은 무조건 해가 바뀌기 전인 '전년도 축(丑)월'의 기운으로 풀이하고, 2월(인월)부터 새해 기운을 적용하십시오.
 
+실제 대운 흐름: {daewun_info_str}
+실제 세운 흐름: {sewun_info_str}
 사주: {ys}{yb}년 {ms}{mb}월 {ds}{db}일 {hs}{hb}시
 
 [출력 템플릿]
@@ -571,11 +570,11 @@ if btn_single or btn_compare:
 </div>
 <h3 style='color:#1A237E;'>2. 성격</h3>
 <div class='content-box-loose'>
-<p>1) 겉으로 드러난 성격 (좌법/포태법 적용)</p>
-<p>2) 감추어진 진짜 속마음 (인종법 및 공망의 실체적 결핍 적용)</p>
+<p>1) 겉으로 드러난 성격</p>
+<p>2) 감추어진 진짜 속마음</p>
 </div>
 <h3 style='color:#1A237E;'>3. 부모·형제운</h3><div class='content-box-loose'></div>
-<h3 style='color:#1A237E;'>4. 학업·진학운</h3><div class='content-box-loose'>(원국 및 10~20대 대운 연계 분석)</div>
+<h3 style='color:#1A237E;'>4. 학업·진학운</h3><div class='content-box-loose'></div>
 <h3 style='color:#1A237E;'>5. 적성·직업운</h3><div class='content-box-loose'></div>
 <h3 style='color:#1A237E;'>6. 결혼·자녀운</h3><div class='content-box-loose'></div>
 <h3 style='color:#1A237E;'>7. 사업운</h3><div class='content-box-loose'></div>
@@ -585,19 +584,19 @@ if btn_single or btn_compare:
 
 [DAEWUN_TABLE_HERE]
 <div class='content-box-loose'>
-<p>▶ 지나온 각 과거 대운 요약 (각 대운별 2~3줄 요약)</p>
+<p>▶ 지나온 각 과거 대운 요약</p>
 <p>▶ 현재 대운 전반기 상세 분석</p>
 <p>▶ 현재 대운 후반기 상세 분석</p>
 </div>
 [SEWUN_TABLE_HERE]
 <div class='content-box-loose'>
-<p>▶ 지나온 각 과거 세운 요약 (각 세운별 2~3줄 요약, 새 대운 첫해 시 최소 과거 2년 치 분석)</p>
+<p>▶ 지나온 각 과거 세운 요약</p>
 <p>▶ 올해({curr_y}년 丙午년) 세운 전반기(양력 2월~7월 말) 상세 분석</p>
 <p>▶ 올해({curr_y}년 丙午년) 세운 후반기(양력 8월~내년 1월 말) 상세 분석</p>
 </div>
 [WOLWUN_TABLE_HERE]
 <div class='content-box-loose'>
-<p>▶ 지나온 각 과거 월운 요약 (각 월운별 2~3줄 요약. 1월은 반드시 전년도 축(丑)월의 기운으로 풀이)</p>
+<p>▶ 지나온 각 과거 월운 요약</p>
 <p>▶ 이번 달({curr_m}월 {cur_wol_g}{cur_wol_j}월) 전반기 (양력 5일~19일) 상세 분석</p>
 <p>▶ 이번 달({curr_m}월 {cur_wol_g}{cur_wol_j}월) 후반기 (양력 20일~익월 4일) 상세 분석</p>
 </div>
@@ -627,7 +626,7 @@ if btn_single or btn_compare:
 
                 report_1_full_html = f"""<div class='report-page'>
 <div class='vip-inset-frame' style='border-color:#1A237E;'>
-<h1 style='text-align:center;'>🔬 [초연 전통명리 사주풀이]</h1>
+<h1 style='text-align:center;'>🔬 [초연 시공명리 사주풀이]</h1>
 {info_h}
 {table_html}
 {master_bar_html}
