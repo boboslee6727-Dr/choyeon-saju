@@ -12,7 +12,7 @@ import streamlit.components.v1 as components
 # ==============================================================================
 # 0. VIP 인셋 프레임 및 초강력 프린트 CSS 
 # ==============================================================================
-st.set_page_config(page_title="초연 전통명리 사주풀이 Ver 13.31", layout="wide")
+st.set_page_config(page_title="초연 전통명리 사주풀이 Ver 13.32", layout="wide")
 
 st.markdown("""
 <style>
@@ -296,26 +296,50 @@ def get_time_ganji(day_gan, time_str, dt_obj=None):
     start_gan_idx = {"甲":0,"己":0,"乙":2,"庚":2,"丙":4,"辛":4,"丁":6,"壬":6,"戊":8,"癸":8}.get(day_gan, 0)
     return list(GAN)[(start_gan_idx + t_idx) % 10], target_ji
 
+# [Ver 13.32 수술] 대운수 계산 공식 완벽 수정 (에러 없는 올림/버림 로직 구현)
 def get_daeun_su_accurate(utc_dt, order):
     try:
-        sun = ephem.Sun(); jeol_lons = [315, 345, 15, 45, 75, 105, 135, 165, 195, 225, 255, 285]
-        sun.compute(utc_dt); lon = math.degrees(ephem.Ecliptic(sun).lon) % 360.0
-        if order == 1: targets = [l for l in jeol_lons if l > lon] + [l + 360 for l in jeol_lons if l <= lon]; t_lon = min(targets) % 360
-        else: targets = [l for l in jeol_lons if l <= lon] + [l - 360 for l in jeol_lons if l > lon]; t_lon = max(targets) % 360
-        search_dt, step = utc_dt, dt_mod.timedelta(hours=6) if order == 1 else dt_mod.timedelta(hours=-6)
+        sun = ephem.Sun()
+        jeol_lons = [315, 345, 15, 45, 75, 105, 135, 165, 195, 225, 255, 285]
+        sun.compute(utc_dt)
+        lon = math.degrees(ephem.Ecliptic(sun).lon) % 360.0
+        
+        if order == 1: 
+            targets = [l for l in jeol_lons if l > lon] + [l + 360 for l in jeol_lons if l <= lon]
+            t_lon = min(targets) % 360
+        else: 
+            targets = [l for l in jeol_lons if l <= lon] + [l - 360 for l in jeol_lons if l > lon]
+            t_lon = max(targets) % 360
+            
+        search_dt = utc_dt
+        step = dt_mod.timedelta(hours=6) if order == 1 else dt_mod.timedelta(hours=-6)
+        
         for _ in range(150):
-            sun.compute(search_dt); l = math.degrees(ephem.Ecliptic(sun).lon) % 360.0
-            if (order==1 and l>=t_lon and l-t_lon<180) or (order==-1 and l<=t_lon and t_lon-l<180): break
+            sun.compute(search_dt)
+            l = math.degrees(ephem.Ecliptic(sun).lon) % 360.0
+            if (order==1 and l>=t_lon and l-t_lon<180) or (order==-1 and l<=t_lon and t_lon-l<180): 
+                break
             search_dt += step
-        return max(1, min(10, round(abs((search_dt - utc_dt).total_seconds()) / 86400.0 / 3)))
-    except: return 1
+            
+        days_diff = abs((search_dt - utc_dt).total_seconds()) / 86400.0
+        d_su = int(days_diff / 3)
+        rem = days_diff % 3
+        if rem >= 1.5: 
+            d_su += 1
+        if d_su == 0: 
+            d_su = 1
+        if d_su > 10: 
+            d_su = 10
+        return d_su
+    except: 
+        return 1
 
 # ==============================================================================
 # 3. 사이드바 UI
 # ==============================================================================
 with st.sidebar:
     st.title("🧪 초연 임상 연구소")
-    st.caption("Ver 13.31 Masterpiece")
+    st.caption("Ver 13.32 Masterpiece")
     
     with st.expander("🔍 사주팔자 역산 검색", expanded=False):
         col_g1, col_g2 = st.columns(2)
@@ -387,7 +411,7 @@ with st.sidebar:
 if btn_single or btn_compare:
     if btn_compare and not comp_text.strip(): st.warning("⚠️ 타 술사 감명서를 입력하세요.")
     else:
-        spinner_msg = "두 감명서를 1:1 상세 비교 분석 중...." if btn_compare else "초연 전통명리 사주풀이(Ver 13.31) 분석 중..."
+        spinner_msg = "두 감명서를 1:1 상세 비교 분석 중...." if btn_compare else "초연 전통명리 사주풀이(Ver 13.32) 분석 중..."
         
         with st.spinner(spinner_msg):
             klc = KoreanLunarCalendar()
@@ -459,6 +483,11 @@ if btn_single or btn_compare:
             
             s12_list = [get_12_shinsal(yb, j) for j in jjis if get_12_shinsal(yb, j) != "-"]
             s12_str = ", ".join(list(dict.fromkeys(s12_list))) if s12_list else "특이 12신살 없음"
+            
+            # [Ver 13.32 수술] 일주(1번 인덱스) 태극귀인 여부 정밀 검사
+            day_shinsals = "".join(get_general_shinsal_filtered(1, gans, jjis))
+            has_taegeuk = "태극귀인" in day_shinsals
+            taegeuk_prompt = "-> [특수 지시] 일주(日柱)에 태극귀인이 있으므로 조상의 든든한 음덕과 웅장한 마무리를 돕는 수호천사 기운으로 특별히 통변하십시오." if has_taegeuk else "-> [환각 금지] 이 명조의 일주에는 태극귀인이 없습니다. 절대로 태극귀인이나 수호천사 기운을 언급하지 마십시오."
             
             samhyung_warn = ""
             has_in, has_sa, has_shin = '寅' in jjis, '巳' in jjis, '申' in jjis
@@ -547,7 +576,6 @@ if btn_single or btn_compare:
 </div>
 </div>"""
 
-            # [Ver 13.31] 연령별/성별 맞춤 동적 프롬프트 조립 로직
             age_prompt = ""
             if u_age < 20:
                 age_prompt = "내담자는 [청소년기(10대)]입니다. '4. 학업·진학운'과 '3. 부모·형제운'을 최우선으로 가장 상세히 분석하고, 재성운(재물)/사업운은 간략히 축소하십시오."
@@ -569,7 +597,6 @@ if btn_single or btn_compare:
             dw_mid2_age = current_daewun_age + 5
             dw_end_age = current_daewun_age + 9
             
-            # [Ver 13.31] 지나온 월운 뼈대 강제 생성 (AI 누락 완벽 차단)
             past_months_html = "<p>▶ 지나온 각 과거 월운 요약</p>\n"
             for m in range(1, curr_m):
                 g = wol_gans[m-1]
@@ -581,6 +608,7 @@ if btn_single or btn_compare:
                 else:
                     past_months_html += f"<p><b>- {curr_y}년 {m}월 ({g}{j}월):</b> </p>\n"
 
+            # [Ver 13.32 수술] 환각 차단 및 정밀 룰 탑재 프롬프트
             prompt = f"""
 [절대 규칙]
 1. 현재 시스템 시간: 2026년(丙午년) {curr_m}월({cur_wol_g}{cur_wol_j}월)
@@ -590,33 +618,34 @@ if btn_single or btn_compare:
 5. [강제] 응답의 모든 문장에서 '내담자'라는 단어 사용 절대 금지. 반드시 [{disp_name}님]을 사용하여 서술하십시오.
 
 [🚨 3D 입체 통변 및 육친 강제 지시]
-1번~11번 모든 항목은 평면적 해석을 금지하며, 반드시 [육친적(관계), 심리적(내면), 사회적(직업/재물)] 3차원 관점을 융합하여 풀이하십시오.
-현재 혼인 상태: '{u_marital}'.
+1번~11번 모든 항목은 평면적 해석을 금지하며, 반드시 [관계, 심리적 내면, 사회적 영역(직업/재물)] 3차원 관점을 융합하여 풀이하십시오.
+현재 혼인 상태: '{u_marital}'. 절대 '육친적'이라는 단어를 쓰지 말고 "인간관계 측면에서 살펴보면" 등으로 순화하십시오.
 
 [🔥 내담자 맞춤형 정밀 타겟팅 룰 (반드시 엄수)]
 - {age_prompt}
 - {gender_prompt}
 
 [🌟 대중 친화적 하이브리드 통변 강제 지시]
-- 모든 명리 용어(십성, 신살, 오행 등)는 절대로 단독으로 쓰지 마십시오.
+- [천간 합/충 짝짓기 오류(환각) 절대 금지] 천간의 합(合)은 '甲己, 乙庚, 丙辛, 丁壬, 戊癸' 이고, 천간의 충(沖)은 '甲庚, 乙辛, 丙壬, 丁癸' 뿐입니다. 절대 '갑경합', '을기충' 등 글자 짝을 잘못 지어 명리학에 없는 거짓 용어를 지어내지 마십시오. 충(갈등/변화)의 상황에 합(合)이라는 단어를 쓰는 실수를 엄금합니다.
+- 모든 명리 용어(십성, 신살, 묘유충 등)는 절대로 단독으로 쓰지 마십시오.
 - 반드시 [대중이 이해하기 쉬운 현대적 구어체 표현] + (명리용어) 형태로 병기하십시오.
-  예시) "재능을 통한 현실적 성취(식신생재)", "책임감과 수용력(관인상생)"
-- 절대 '육친적'이라는 단어를 쓰지 말고, "내 주변 사람들과의 인간관계 측면에서 살펴보면" 등으로 부드럽게 순화하십시오.
+  예시) "가을의 서늘함과 봄의 생동감이 부딪히는 현상(卯酉충)"
 - [한자 100% 표기 규칙] '甲목', '己토' ❌ -> 반드시 '甲木', '己土', '亥水', '甲庚충' 등 100% 한자(漢字)로 표기하십시오.
 - [궁성 스토리텔링 강제] 합형충파해 설명 시 각 지지(자리)가 상징하는 육친과 의미를 엮어 풀이하십시오.
-  예시) "나의 사회적 무대와 직장(월지 亥水), 자녀와 아랫사람(시지 卯木), 그리고 개인적 기반이자 배우자 자리(일지 未土)가 서로 단단하게 결속(亥卯未 삼합)하여..."
 - [십이운성 3D 결합 강제] 십성(육친) 통변 시, 반드시 해당 기둥의 십이운성(十二運星)이 부여하는 에너지의 강약과 상태를 결합하여 입체적으로 통변하십시오. (예: 건록을 깔고 앉아 매우 왕성함)
 
 [🚨 핵심 팩트 강제 지시]
 - 격국(格局) 팩트: [{gyukgook_detail}] 
 - 공망(空亡) 팩트: [년주: {n_gong}, 일주: {i_gong}] -> 년공망은 사회적/초년 결핍, 일공망은 개인적/배우자 결핍으로 나누어 설명하십시오.
-- 부모운 특수 지시: 만약 사주 원국에서 부모를 상징하는 기운이 다른 강한 세력(예: 삼합)에 의해 극을 받거나 기운을 전부 빼앗긴다면, 이를 '초년 시절의 뼈아픈 상실이나 짊어져야 했던 삶의 무게' 등으로 통변에 깊이 녹여내십시오. (특정 나이는 언급 금지)
+- 부모운 특수 지시: 사주 원국에서 부모를 상징하는 기운이 약하거나 극을 받는다면, 이를 '초년 시절의 뼈아픈 상실이나 짊어져야 했던 삶의 무게' 등으로 통변에 깊이 녹여내십시오. (특정 나이는 언급 금지)
 - 건강운 시작 전 지시: '10. 건강운'을 시작하기 전, 일반인이 이해하기 쉽게 오행(목화토금수)의 생극제화 원리(예: 나무는 간, 불은 심장 등)를 1~2줄로 비유적으로 먼저 설명하십시오.
 - 일반신살: [{shinsal_str}] / 12신살: [{s12_str}]
-  -> [특수 지시] 일주(日柱) 태극귀인이 있다면 조상의 음덕과 웅장한 마무리를 돕는 수호천사 기운으로 통변하십시오. 신살의 '위치'를 임의로 지어내지 마십시오.
-- [경계령] 분석 순서는 [합 ➡️ 형 ➡️ 충 ➡️ 파 ➡️ 해] 순서를 엄수. 원진/귀문/라망 도출 시 예민함/제약성을 철저히 통변. 12신살(육해/천/겁살) 및 삼형살({samhyung_warn}) 경고.
-- [과거 대운 누락 금지] 과거 대운 요약 시 절대 뭉뚱그리거나 역행하지 말고, 1대운부터 시간 순서대로(정방향) 차근차근 전부 서술하십시오.
-- [조언 및 개운비법 극대화] '12. 삶을 바꾸는 지혜로운 조언'과 '개운 비법' 파트는 절대 요약하지 말고 상세히 서술하며, 가장 강조할 명리적 단어나 문구는 반드시 ' ' (작은따옴표)로 묶어 강조하십시오.
+  {taegeuk_prompt}
+  -> [환각 금지] AI는 신살(백호대살 등)의 '위치'를 임의로 지어내지 마십시오.
+- [경계령] 분석 순서는 [합 ➡️ 형 ➡️ 충 ➡️ 파 ➡️ 해] 순서를 엄수.
+- [과거 대운 누락 금지] 과거 대운 요약 시 절대 뭉뚱그리거나 역행하지 말고, 1대운부터 시간 순서대로 차근차근 모두 서술하십시오.
+- [조언 및 개운비법 논리성 강제] '12. 삶을 바꾸는 지혜로운 조언'과 '개운 비법' 파트는 행운의 색상, 방위, 에너지(수호천사, 기운)를 추천할 때 반드시 '2) 조후/억부 용신'에서 분석된 나를 돕는 오행(용신)을 논리적 근거로 삼아 서술하십시오. 없는 기운을 임의로 지어내지 마십시오.
+- 통변 시 가장 강조할 명리적 단어나 문구는 반드시 ' ' (작은따옴표)로 묶어 시각적으로 강조하십시오.
 
 실제 대운 흐름: {daewun_info_str}
 실제 세운 흐름: {sewun_info_str}
