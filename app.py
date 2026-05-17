@@ -12,7 +12,7 @@ import streamlit.components.v1 as components
 # ==============================================================================
 # 0. VIP 인셋 프레임 및 초강력 프린트 CSS 
 # ==============================================================================
-st.set_page_config(page_title="초연 전통명리 사주풀이 Ver 13.32", layout="wide")
+st.set_page_config(page_title="초연 전통명리 사주풀이 Ver 15.0", layout="wide")
 
 st.markdown("""
 <style>
@@ -296,7 +296,7 @@ def get_time_ganji(day_gan, time_str, dt_obj=None):
     start_gan_idx = {"甲":0,"己":0,"乙":2,"庚":2,"丙":4,"辛":4,"丁":6,"壬":6,"戊":8,"癸":8}.get(day_gan, 0)
     return list(GAN)[(start_gan_idx + t_idx) % 10], target_ji
 
-# [Ver 13.32 수술] 대운수 계산 공식 완벽 수정 (에러 없는 올림/버림 로직 구현)
+# [Ver 15.0 수술] 대운수 계산 공식 완벽 수정 (에러 없는 올림/버림 로직 구현)
 def get_daeun_su_accurate(utc_dt, order):
     try:
         sun = ephem.Sun()
@@ -339,7 +339,7 @@ def get_daeun_su_accurate(utc_dt, order):
 # ==============================================================================
 with st.sidebar:
     st.title("🧪 초연 임상 연구소")
-    st.caption("Ver 13.32 Masterpiece")
+    st.caption("Ver 15.0 Masterpiece")
     
     with st.expander("🔍 사주팔자 역산 검색", expanded=False):
         col_g1, col_g2 = st.columns(2)
@@ -411,7 +411,7 @@ with st.sidebar:
 if btn_single or btn_compare:
     if btn_compare and not comp_text.strip(): st.warning("⚠️ 타 술사 감명서를 입력하세요.")
     else:
-        spinner_msg = "두 감명서를 1:1 상세 비교 분석 중...." if btn_compare else "초연 전통명리 사주풀이(Ver 13.32) 분석 중..."
+        spinner_msg = "두 감명서를 1:1 상세 비교 분석 중...." if btn_compare else "초연 전통명리 사주풀이(Ver 15.0) 분석 중..."
         
         with st.spinner(spinner_msg):
             klc = KoreanLunarCalendar()
@@ -425,10 +425,14 @@ if btn_single or btn_compare:
             sol_str = f"{klc.solarYear}년 {klc.solarMonth:02d}월 {klc.solarDay:02d}일"
             lun_str = f"{klc.lunarYear}년 {klc.lunarMonth:02d}월 {klc.lunarDay:02d}일 ({leap_str})"
             
-            curr_y = 2026
-            curr_m = 5
+            curr_dt_sys = dt_mod.datetime.now()
+            curr_y = curr_dt_sys.year
+            curr_m = curr_dt_sys.month
             u_age = curr_y - u_y + 1
             
+            # 올해의 간지 동적 계산 (1984년 甲子년 기준)
+            base_y_idx = (curr_y - 1984) % 60
+            curr_y_ganji = GAN[base_y_idx % 10] + JI[base_y_idx % 12]            
             gj = klc.getChineseGapJaString().split()
             ys, yb, ms, mb, ds, db = gj[0][0], gj[0][1], gj[1][0], gj[1][1], gj[2][0], gj[2][1]
             
@@ -483,12 +487,7 @@ if btn_single or btn_compare:
             
             s12_list = [get_12_shinsal(yb, j) for j in jjis if get_12_shinsal(yb, j) != "-"]
             s12_str = ", ".join(list(dict.fromkeys(s12_list))) if s12_list else "특이 12신살 없음"
-            
-            # [Ver 13.32 수술] 일주(1번 인덱스) 태극귀인 여부 정밀 검사
-            day_shinsals = "".join(get_general_shinsal_filtered(1, gans, jjis))
-            has_taegeuk = "태극귀인" in day_shinsals
-            taegeuk_prompt = "-> [특수 지시] 일주(日柱)에 태극귀인이 있으므로 조상의 든든한 음덕과 웅장한 마무리를 돕는 수호천사 기운으로 특별히 통변하십시오." if has_taegeuk else "-> [환각 금지] 이 명조의 일주에는 태극귀인이 없습니다. 절대로 태극귀인이나 수호천사 기운을 언급하지 마십시오."
-            
+      
             samhyung_warn = ""
             has_in, has_sa, has_shin = '寅' in jjis, '巳' in jjis, '申' in jjis
             if sum([has_in, has_sa, has_shin]) == 2:
@@ -507,7 +506,13 @@ if btn_single or btn_compare:
             guiin_map = {'甲':'丑, 未','乙':'子, 申','丙':'酉, 亥','丁':'酉, 亥','戊':'丑, 未','己':'子, 申','庚':'丑, 未','辛':'寅, 午','壬':'卯, 巳','癸':'卯, 巳'}
             guiin_str = guiin_map.get(ds, '없음')
                 
-            utc_dt = dt_mod.datetime(u_y, u_m, u_d, 12, 0) - dt_mod.timedelta(hours=9)
+            b_hr, b_mn = 12, 0
+            if u_t != "시간 모름":
+                try: 
+                    b_hr = int(u_t.split(':')[0])
+                    b_mn = 30 # 해당 시(時)의 중간값으로 정밀 보정
+                except: pass
+            utc_dt = dt_mod.datetime(u_y, u_m, u_d, b_hr, b_mn) - dt_mod.timedelta(hours=9)
             order = 1 if (GAN.index(ys)%2==0) == (u_gender=='남성') else -1
             direction_str = "순행" if order == 1 else "역행"
             calc_d = get_daeun_su_accurate(utc_dt, order)
@@ -611,7 +616,7 @@ if btn_single or btn_compare:
             # [Ver 13.32 수술] 환각 차단 및 정밀 룰 탑재 프롬프트
             prompt = f"""
 [절대 규칙]
-1. 현재 시스템 시간: 2026년(丙午년) {curr_m}월({cur_wol_g}{cur_wol_j}월)
+1. 현재 시스템 시간: {curr_y}년({curr_y_ganji}년) {curr_m}월({cur_wol_g}{cur_wol_j}월)
 2. 응답의 첫 글자는 무조건 <h3 style='color:#1A237E;'>1. 사주팔자 구조 분석</h3> 으로 시작하십시오. (인사말 절대 금지)
 3. 절대 들여쓰기를 하지 마십시오. 표(Table)는 절대 직접 그리지 마십시오.
 4. [DAEWUN_TABLE_HERE] 등 마커는 파이썬 치환용이므로 절대 지우지 마십시오.
@@ -640,8 +645,7 @@ if btn_single or btn_compare:
 - 부모운 특수 지시: 사주 원국에서 부모를 상징하는 기운이 약하거나 극을 받는다면, 이를 '초년 시절의 뼈아픈 상실이나 짊어져야 했던 삶의 무게' 등으로 통변에 깊이 녹여내십시오. (특정 나이는 언급 금지)
 - 건강운 시작 전 지시: '10. 건강운'을 시작하기 전, 일반인이 이해하기 쉽게 오행(목화토금수)의 생극제화 원리(예: 나무는 간, 불은 심장 등)를 1~2줄로 비유적으로 먼저 설명하십시오.
 - 일반신살: [{shinsal_str}] / 12신살: [{s12_str}]
-  {taegeuk_prompt}
-  -> [환각 금지] AI는 신살(백호대살 등)의 '위치'를 임의로 지어내지 마십시오.
+  -> [환각 절대 금지] 오직 위 목록에 명시된 신살만 100% 팩트로 인정하여 통변에 활용하십시오. 사주 표에 없는 신살은 절대 언급하거나 지어내지 마시고, 신살의 '위치' 또한 임의로 꾸며내지 마십시오.
 - [경계령] 분석 순서는 [합 ➡️ 형 ➡️ 충 ➡️ 파 ➡️ 해] 순서를 엄수.
 - [과거 운의 압축 및 단답형 절대 금지] 과거 대운, 세운, 월운을 서술할 때 절대로 1~2줄로 짧게 요약하거나 단답형으로 치부하지 마십시오. 각 시기별로 어떤 명리적 작용(십성, 합형충파해)이 내담자의 삶(직업, 건강, 심리 등)에 어떻게 영향을 미쳤는지 반드시 최소 3문장 이상의 풍부하고 긴 스토리텔링으로 상세히 통변하십시오. (요약 금지)
 - [조언 및 개운비법 논리성 강제] '12. 삶을 바꾸는 지혜로운 조언'과 '개운 비법' 파트는 행운의 색상, 방위, 에너지(수호천사, 기운)를 추천할 때 반드시 '2) 조후/억부 용신'에서 분석된 나를 돕는 오행(용신)을 논리적 근거로 삼아 서술하십시오. 없는 기운을 임의로 지어내지 마십시오.
@@ -681,8 +685,8 @@ if btn_single or btn_compare:
 [SEWUN_TABLE_HERE]
 <div class='content-box-loose'>
 <p>▶ 지나온 각 과거 세운 분석</p>
-<p>▶ 올해({curr_y}년 丙午년) 세운 전반기(양력 2월~7월 말) 상세 분석</p>
-<p>▶ 올해({curr_y}년 丙午년) 세운 후반기(양력 8월~내년 1월 말) 상세 분석</p>
+<p>▶ 올해({curr_y}년 {curr_y_ganji}년) 세운 전반기(양력 2월~7월 말) 상세 분석</p>
+<p>▶ 올해({curr_y}년 {curr_y_ganji}년) 세운 후반기(양력 8월~내년 1월 말) 상세 분석</p>
 </div>
 [WOLWUN_TABLE_HERE]
 <div class='content-box-loose'>
