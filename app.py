@@ -12,7 +12,7 @@ import streamlit.components.v1 as components
 # ==============================================================================
 # 0. VIP 인셋 프레임 및 초강력 프린트 CSS 
 # ==============================================================================
-st.set_page_config(page_title="초연 전통명리 사주풀이 Ver 13.30", layout="wide")
+st.set_page_config(page_title="초연 전통명리 사주풀이 Ver 13.31", layout="wide")
 
 st.markdown("""
 <style>
@@ -315,7 +315,7 @@ def get_daeun_su_accurate(utc_dt, order):
 # ==============================================================================
 with st.sidebar:
     st.title("🧪 초연 임상 연구소")
-    st.caption("Ver 13.30 Masterpiece")
+    st.caption("Ver 13.31 Masterpiece")
     
     with st.expander("🔍 사주팔자 역산 검색", expanded=False):
         col_g1, col_g2 = st.columns(2)
@@ -387,7 +387,7 @@ with st.sidebar:
 if btn_single or btn_compare:
     if btn_compare and not comp_text.strip(): st.warning("⚠️ 타 술사 감명서를 입력하세요.")
     else:
-        spinner_msg = "두 감명서를 1:1 상세 비교 분석 중...." if btn_compare else "초연 전통명리 사주풀이(Ver 13.30) 분석 중..."
+        spinner_msg = "두 감명서를 1:1 상세 비교 분석 중...." if btn_compare else "초연 전통명리 사주풀이(Ver 13.31) 분석 중..."
         
         with st.spinner(spinner_msg):
             klc = KoreanLunarCalendar()
@@ -547,7 +547,7 @@ if btn_single or btn_compare:
 </div>
 </div>"""
 
-            # [Ver 13.30] 연령별/성별 맞춤 동적 프롬프트 조립 로직
+            # [Ver 13.31] 연령별/성별 맞춤 동적 프롬프트 조립 로직
             age_prompt = ""
             if u_age < 20:
                 age_prompt = "내담자는 [청소년기(10대)]입니다. '4. 학업·진학운'과 '3. 부모·형제운'을 최우선으로 가장 상세히 분석하고, 재성운(재물)/사업운은 간략히 축소하십시오."
@@ -568,6 +568,18 @@ if btn_single or btn_compare:
             dw_mid_age = current_daewun_age + 4
             dw_mid2_age = current_daewun_age + 5
             dw_end_age = current_daewun_age + 9
+            
+            # [Ver 13.31] 지나온 월운 뼈대 강제 생성 (AI 누락 완벽 차단)
+            past_months_html = "<p>▶ 지나온 각 과거 월운 요약</p>\n"
+            for m in range(1, curr_m):
+                g = wol_gans[m-1]
+                j = wol_jis[m-1]
+                if m == 1:
+                    past_months_html += f"<p><b>- {curr_y}년 1월 ({g}{j}월: 작년도 하반기 연장선):</b> </p>\n"
+                elif m == 2:
+                    past_months_html += f"<p><b>- {curr_y}년 2월 ({g}{j}월: 새로운 시작):</b> </p>\n"
+                else:
+                    past_months_html += f"<p><b>- {curr_y}년 {m}월 ({g}{j}월):</b> </p>\n"
 
             prompt = f"""
 [절대 규칙]
@@ -589,6 +601,7 @@ if btn_single or btn_compare:
 - 모든 명리 용어(십성, 신살, 오행 등)는 절대로 단독으로 쓰지 마십시오.
 - 반드시 [대중이 이해하기 쉬운 현대적 구어체 표현] + (명리용어) 형태로 병기하십시오.
   예시) "재능을 통한 현실적 성취(식신생재)", "책임감과 수용력(관인상생)"
+- 절대 '육친적'이라는 단어를 쓰지 말고, "내 주변 사람들과의 인간관계 측면에서 살펴보면" 등으로 부드럽게 순화하십시오.
 - [한자 100% 표기 규칙] '甲목', '己토' ❌ -> 반드시 '甲木', '己土', '亥水', '甲庚충' 등 100% 한자(漢字)로 표기하십시오.
 - [궁성 스토리텔링 강제] 합형충파해 설명 시 각 지지(자리)가 상징하는 육친과 의미를 엮어 풀이하십시오.
   예시) "나의 사회적 무대와 직장(월지 亥水), 자녀와 아랫사람(시지 卯木), 그리고 개인적 기반이자 배우자 자리(일지 未土)가 서로 단단하게 결속(亥卯未 삼합)하여..."
@@ -597,9 +610,12 @@ if btn_single or btn_compare:
 [🚨 핵심 팩트 강제 지시]
 - 격국(格局) 팩트: [{gyukgook_detail}] 
 - 공망(空亡) 팩트: [년주: {n_gong}, 일주: {i_gong}] -> 년공망은 사회적/초년 결핍, 일공망은 개인적/배우자 결핍으로 나누어 설명하십시오.
+- 부모운 특수 지시: 만약 사주 원국에서 부모를 상징하는 기운이 다른 강한 세력(예: 삼합)에 의해 극을 받거나 기운을 전부 빼앗긴다면, 이를 '초년 시절의 뼈아픈 상실이나 짊어져야 했던 삶의 무게' 등으로 통변에 깊이 녹여내십시오. (특정 나이는 언급 금지)
+- 건강운 시작 전 지시: '10. 건강운'을 시작하기 전, 일반인이 이해하기 쉽게 오행(목화토금수)의 생극제화 원리(예: 나무는 간, 불은 심장 등)를 1~2줄로 비유적으로 먼저 설명하십시오.
 - 일반신살: [{shinsal_str}] / 12신살: [{s12_str}]
   -> [특수 지시] 일주(日柱) 태극귀인이 있다면 조상의 음덕과 웅장한 마무리를 돕는 수호천사 기운으로 통변하십시오. 신살의 '위치'를 임의로 지어내지 마십시오.
 - [경계령] 분석 순서는 [합 ➡️ 형 ➡️ 충 ➡️ 파 ➡️ 해] 순서를 엄수. 원진/귀문/라망 도출 시 예민함/제약성을 철저히 통변. 12신살(육해/천/겁살) 및 삼형살({samhyung_warn}) 경고.
+- [과거 대운 누락 금지] 과거 대운 요약 시 절대 뭉뚱그리거나 역행하지 말고, 1대운부터 시간 순서대로(정방향) 차근차근 전부 서술하십시오.
 - [조언 및 개운비법 극대화] '12. 삶을 바꾸는 지혜로운 조언'과 '개운 비법' 파트는 절대 요약하지 말고 상세히 서술하며, 가장 강조할 명리적 단어나 문구는 반드시 ' ' (작은따옴표)로 묶어 강조하십시오.
 
 실제 대운 흐름: {daewun_info_str}
@@ -641,10 +657,7 @@ if btn_single or btn_compare:
 </div>
 [WOLWUN_TABLE_HERE]
 <div class='content-box-loose'>
-<p>▶ 지나온 각 과거 월운 요약 (각 월별 3줄 이상 상세히 서술)</p>
-<p><b>- {curr_y}년 1월 (己丑월: 작년도 하반기 연장선):</b> </p>
-<p><b>- {curr_y}년 2월 (庚寅월: 새로운 시작):</b> </p>
-<p><b>- {curr_y}년 3월 (辛卯월):</b> </p>
+{past_months_html}
 <p>▶ 이번 달({curr_m}월 {cur_wol_g}{cur_wol_j}월) 전반기 (양력 5일~19일) 상세 분석</p>
 <p>▶ 이번 달({curr_m}월 {cur_wol_g}{cur_wol_j}월) 후반기 (양력 20일~익월 4일) 상세 분석</p>
 </div>
