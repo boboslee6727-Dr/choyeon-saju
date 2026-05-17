@@ -296,7 +296,7 @@ def get_time_ganji(day_gan, time_str, dt_obj=None):
     start_gan_idx = {"甲":0,"己":0,"乙":2,"庚":2,"丙":4,"辛":4,"丁":6,"壬":6,"戊":8,"癸":8}.get(day_gan, 0)
     return list(GAN)[(start_gan_idx + t_idx) % 10], target_ji
 
-# [Ver 15.0 수술] 대운수 계산 공식 완벽 수정 (에러 없는 올림/버림 로직 구현)
+# [Ver 15.0 수술] 대운수 계산 공식 완벽 수정 (ver 509.0과 일치 확인)
 def get_daeun_su_accurate(utc_dt, order):
     try:
         sun = ephem.Sun()
@@ -312,21 +312,27 @@ def get_daeun_su_accurate(utc_dt, order):
             t_lon = max(targets) % 360
             
         search_dt = utc_dt
-        step = dt_mod.timedelta(hours=6) if order == 1 else dt_mod.timedelta(hours=-6)
+        # [수술] 10분 단위 초정밀 추적으로 절기 통과 시점의 오버슈트 원천 차단
+        step = dt_mod.timedelta(minutes=10) if order == 1 else dt_mod.timedelta(minutes=-10)
         
-        for _ in range(150):
+        for _ in range(6000):
             sun.compute(search_dt)
             l = math.degrees(ephem.Ecliptic(sun).lon) % 360.0
             if (order==1 and l>=t_lon and l-t_lon<180) or (order==-1 and l<=t_lon and t_lon-l<180): 
                 break
             search_dt += step
             
-        days_diff = abs((search_dt - utc_dt).total_seconds()) / 86400.0
+        total_seconds = abs((search_dt - utc_dt).total_seconds())
+        days_diff = total_seconds / 86400.0
+        
+        # 정통 명리학 반올림 룰 엄격 적용 (3일=1년, 1.5일=6개월 기준 반올림)
         d_su = int(days_diff / 3)
-        rem = days_diff % 3
-        if rem >= 1.5: 
+        rem_days = days_diff % 3
+        
+        if rem_days >= 1.5:
             d_su += 1
-        if d_su == 0: 
+            
+        if d_su <= 0: 
             d_su = 1
         if d_su > 10: 
             d_su = 10
