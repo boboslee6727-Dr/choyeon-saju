@@ -300,9 +300,12 @@ def get_time_ganji(day_gan, time_str, dt_obj=None):
 def get_daeun_su_accurate(utc_dt, order):
     try:
         sun = ephem.Sun()
-        jeol_lons = [315, 345, 15, 45, 75, 105, 135, 165, 195, 225, 255, 285]
         sun.compute(utc_dt)
-        lon = math.degrees(ephem.Ecliptic(sun).lon) % 360.0
+        # [수술] 과거 날짜의 세차운동 오류를 잡기 위해 당해 연도(epoch of date) 기준 apparent 좌표로 정밀 변환
+        eq = ephem.Equatorial(sun.a_ra, sun.a_dec, epoch=utc_dt)
+        lon = math.degrees(ephem.Ecliptic(eq).lon) % 360.0
+        
+        jeol_lons = [315, 345, 15, 45, 75, 105, 135, 165, 195, 225, 255, 285]
         
         if order == 1: 
             targets = [l for l in jeol_lons if l > lon] + [l + 360 for l in jeol_lons if l <= lon]
@@ -312,12 +315,12 @@ def get_daeun_su_accurate(utc_dt, order):
             t_lon = max(targets) % 360
             
         search_dt = utc_dt
-        # [수술] 10분 단위 초정밀 추적으로 절기 통과 시점의 오버슈트 원천 차단
         step = dt_mod.timedelta(minutes=10) if order == 1 else dt_mod.timedelta(minutes=-10)
         
         for _ in range(6000):
             sun.compute(search_dt)
-            l = math.degrees(ephem.Ecliptic(sun).lon) % 360.0
+            eq_s = ephem.Equatorial(sun.a_ra, sun.a_dec, epoch=search_dt)
+            l = math.degrees(ephem.Ecliptic(eq_s).lon) % 360.0
             if (order==1 and l>=t_lon and l-t_lon<180) or (order==-1 and l<=t_lon and t_lon-l<180): 
                 break
             search_dt += step
@@ -325,17 +328,14 @@ def get_daeun_su_accurate(utc_dt, order):
         total_seconds = abs((search_dt - utc_dt).total_seconds())
         days_diff = total_seconds / 86400.0
         
-        # 정통 명리학 반올림 룰 엄격 적용 (3일=1년, 1.5일=6개월 기준 반올림)
+        # 정통 명리학 대운수 사사오입 규칙 엄격 적용
         d_su = int(days_diff / 3)
         rem_days = days_diff % 3
-        
         if rem_days >= 1.5:
             d_su += 1
             
-        if d_su <= 0: 
-            d_su = 1
-        if d_su > 10: 
-            d_su = 10
+        if d_su <= 0: d_su = 1
+        if d_su > 10: d_su = 10
         return d_su
     except: 
         return 1
@@ -518,7 +518,9 @@ if btn_single or btn_compare:
                     b_hr = int(u_t.split(':')[0])
                     b_mn = 30 # 해당 시(時)의 중간값으로 정밀 보정
                 except: pass
-            utc_dt = dt_mod.datetime(u_y, u_m, u_d, b_hr, b_mn) - dt_mod.timedelta(hours=9)
+            
+            # [사고모델 최종 수술] 음력 입력 시에도 천문 계산 기점은 변환된 실제 양력 날짜(klc.solarYear/Month/Day)로 완벽 동기화
+            utc_dt = dt_mod.datetime(klc.solarYear, klc.solarMonth, klc.solarDay, b_hr, b_mn) - dt_mod.timedelta(hours=9)
             order = 1 if (GAN.index(ys)%2==0) == (u_gender=='남성') else -1
             direction_str = "순행" if order == 1 else "역행"
             calc_d = get_daeun_su_accurate(utc_dt, order)
