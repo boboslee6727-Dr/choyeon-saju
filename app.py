@@ -12,7 +12,7 @@ import streamlit.components.v1 as components
 # ==============================================================================
 # 0. VIP 인셋 프레임 및 초강력 프린트 CSS 
 # ==============================================================================
-st.set_page_config(page_title="초연 전통명리 사주풀이 Ver 13.10", layout="wide")
+st.set_page_config(page_title="초연 전통명리 사주풀이 Ver 13.11", layout="wide")
 
 st.markdown("""
 <style>
@@ -82,7 +82,6 @@ st.markdown("""
             page-break-after: always; 
             border-radius: 0; width: 100%; max-width: 100%;
         }
-        /* [수술부위 2] 마지막 페이지 출력 후 빈 백지 배출 완벽 차단 */
         .report-page:last-of-type { page-break-after: auto; }
         .page-break-before { page-break-before: always; }
         .vip-inset-frame { border: 2px solid #000; border-radius: 20px; padding: 15px; }
@@ -260,7 +259,6 @@ def get_jijanggan_full(dg, ji):
             res += "<div style='flex-grow:1; display:flex; align-items:center; justify-content:center; background:#f9f9f9; width:95%; margin:0 auto; color:#bbb; border-radius:3px; border:1px dashed #ddd;'>-</div>"
     return res + "</div>"
 
-# [수술부위 1] 격국 산출 시 투출 여부(과정)까지 상세하게 추적하여 팩트로 반환
 def get_gyukgook_detailed(ds, ys, ms, hs, mb):
     if mb in ["?", "-", " "]: return "알 수 없음", "월지를 알 수 없어 격국을 산출할 수 없습니다."
     raw = {'子':['壬','-','癸'],'丑':['癸','辛','己'],'寅':['戊','丙','甲'],'卯':['甲','-','乙'],'辰':['乙','癸','戊'],'巳':['戊','庚','丙'],'午':['丙','己','丁'],'未':['丁','乙','己'],'申':['戊','壬','庚'],'酉':['庚','-','辛'],'戌':['辛','丁','戊'],'亥':['戊','甲','壬']}.get(mb, ['-','-','-'])
@@ -317,7 +315,7 @@ def get_daeun_su_accurate(utc_dt, order):
 # ==============================================================================
 with st.sidebar:
     st.title("🧪 초연 임상 연구소")
-    st.caption("Ver 13.10 Masterpiece")
+    st.caption("Ver 13.11 Masterpiece")
     
     with st.expander("🔍 사주팔자 역산 검색", expanded=False):
         col_g1, col_g2 = st.columns(2)
@@ -375,6 +373,7 @@ with st.sidebar:
     u_t = st.selectbox("태어난 시간", idx_list, key="s_t")
     
     st.markdown("<br>", unsafe_allow_html=True)
+    # [수술부위 1] 버튼 이름 변경
     btn_single = st.button("🚀 초연 전통명리 사주풀이", use_container_width=True, type="primary")
     
     st.markdown("---")
@@ -389,7 +388,8 @@ with st.sidebar:
 if btn_single or btn_compare:
     if btn_compare and not comp_text.strip(): st.warning("⚠️ 타 술사 감명서를 입력하세요.")
     else:
-        spinner_msg = "두 감명서를 1:1 상세 비교 분석 중...." if btn_compare else "초연 시공명리 사주풀이 분석 중..."
+        # [수술부위 2] 로딩 텍스트 변경
+        spinner_msg = "두 감명서를 1:1 상세 비교 분석 중...." if btn_compare else "초연 전통명리 사주풀이 분석 중..."
         
         with st.spinner(spinner_msg):
             klc = KoreanLunarCalendar()
@@ -416,10 +416,11 @@ if btn_single or btn_compare:
             
             def td(c, size="18px"): return f"<td class='color-{get_color(c)}' style='font-size:{size}; font-weight:900; border:1px solid #444 !important;'>{('?' if c in ['?',' ','-'] else c)}</td>"
             
+            # [수술부위 3] 합형충파해 가로 줄눈 완벽 제거 (맨 바닥 선만 남김)
             ji_rel_rows = ""
             for l_idx, r_idx in enumerate([1, 2, 0, 3]):
                 b_bot = "1px solid #444" if l_idx == 3 else "none"
-                cells = "".join([f"<td style='color:{('#D50000' if ci==r_idx else ('#000' if get_ji_rel_set(jjis[r_idx], jjis[ci])!='-' else '#BBB'))}; font-weight:900; border-top:none !important; border-left:1px solid #444 !important; border-right:1px solid #444 !important; border-bottom:{b_bot} !important;'>{('←('+jjis[r_idx]+')→' if ci==r_idx else get_ji_rel_set(jjis[r_idx], jjis[ci]))}</td>" for ci in range(4)])
+                cells = "".join([f"<td style='color:{('#D50000' if ci==r_idx else ('#000' if get_ji_rel_set(jjis[r_idx], jjis[ci])!='-' else '#BBB'))}; font-weight:900; border-top:none !important; border-bottom:{b_bot} !important; border-left:1px solid #444 !important; border-right:1px solid #444 !important;'>{('←('+jjis[r_idx]+')→' if ci==r_idx else get_ji_rel_set(jjis[r_idx], jjis[ci]))}</td>" for ci in range(4)])
                 lbl = f"<td rowspan='4' class='header-cell-main' style='border-right: 1px solid #444 !important; border-left: 1px solid #444 !important; border-bottom: 1px solid #444 !important;'>합충형파해</td>" if l_idx==0 else ""
                 ji_rel_rows += f"<tr>{lbl}{cells}</tr>"
 
@@ -446,7 +447,6 @@ if btn_single or btn_compare:
 <tr><td class='header-cell-main' style='border:1px solid #444 !important;'>일반신살</td>{"".join([f"<td style='vertical-align:top; padding:2px; border:1px solid #444 !important;'>{'<br>'.join(get_general_shinsal_filtered(i, gans, jjis)) if get_general_shinsal_filtered(i, gans, jjis) else '-'}</td>" for i in range(4)])}</tr>
 </table>"""
             
-            # [수술부위 1] 투출 여부 팩트를 디테일하게 추적
             calc_gyukgook, gyukgook_detail = get_gyukgook_detailed(ds, ys, ms, hs, mb)
 
             gen_shinsal_list = []
@@ -481,10 +481,12 @@ if btn_single or btn_compare:
             order = 1 if (GAN.index(ys)%2==0) == (u_gender=='남성') else -1
             direction_str = "순행" if order == 1 else "역행"
             calc_d = get_daeun_su_accurate(utc_dt, order)
+            
+            # [수술부위 4] 마스터바 뷰 정비 및 공망 간격 확대
             n_gong = calculate_gongmang(ys, yb)
             i_gong = calculate_gongmang(ds, db)
             
-            master_bar_html = f"<div style='border:2px solid #3E2723; padding:8px; display:flex; justify-content:space-between; font-weight:900; font-size:12px; border-radius:8px; white-space:nowrap;'><div>⏳ 대운수: {calc_d}</div><div>💥 오행: 木({counts['목']}) 火({counts['화']}) 土({counts['토']}) 金({counts['금']}) 水({counts['수']})</div><div>🌟 천을귀인: {guiin_str}</div><div>🎯 공망: [년] {n_gong}, [일] {i_gong}</div></div>"
+            master_bar_html = f"<div style='border:2px solid #3E2723; padding:8px; display:flex; justify-content:space-between; font-weight:900; font-size:12px; border-radius:8px; white-space:nowrap;'><div>⏳ 대운수: {calc_d}</div><div>💥 오행: 木({counts['목']}) 火({counts['화']}) 土({counts['토']}) 金({counts['금']}) 水({counts['수']})</div><div>🌟 천을귀인: {guiin_str}</div><div>🎯 공망: [년] {n_gong} &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; [일] {i_gong}</div></div>"
             
             daewun_info = []
             un_html = f"<h4 style='color:#1A237E; margin-top:20px;'>11. 운의 흐름</h4><div style='margin-bottom:10px; font-weight:bold;'>[ 대운의 흐름 (대운수: {calc_d}, {direction_str}) ]</div><div style='display:flex; flex-direction:row-reverse; width:100%; border:2px solid #3E2723; background:white; margin-bottom:5px;'>"
@@ -535,17 +537,18 @@ if btn_single or btn_compare:
                 wol_html += f"<div style='flex:1; border-left:{b_left}; text-align:center; padding-bottom:3px; background-color:{bg_col};'><div style='background-color:#3E2723; color:#FFFFFF; font-weight:900; padding:4px 0; font-size:12px; border-bottom:1px solid #ccc;'>{tm}월</div><div style='padding:2px; font-size:12px;'>{get_ss(ds,tc)}</div><div class='color-{get_color(tc)}' style='font-size:16px; font-weight:900;'>{tc}</div><div class='color-{get_color(tj)}' style='font-size:16px; font-weight:900;'>{tj}</div><div style='padding:2px; font-size:12px;'>{get_ss(ds,tj)}</div><div style='font-size:11px; border-top:1px solid #ccc;'>{get_unsung(ds,tj)}</div><div style='font-size:11px; color:#C62828; border-top:1px solid #ccc;'>{get_12_shinsal(yb, tj)}</div></div>"
             wol_html += "</div>"
             
+            # [수술부위 5] 모든 '시공' 명칭을 '전통'으로 완전 변경
             closing_html = f"""<div style='margin-top: 30px;'>
 <p style='text-indent: 15px; text-align: justify; line-height: 1.8; margin-bottom: 8px;'>'사주팔자(命)'는 태어날 때 부여받은 변하지 않는 '바코드(bar-code)'와 같지만, 우리가 살아가며 마주하는 '스캐너(scanner)'인 '운(運)'은 늘 변화하며 흐릅니다.</p>
-<p style='text-indent: 15px; text-align: justify; line-height: 1.8; margin-bottom: 8px;'>따라서 오늘의 '초연 시공명리와의 인연'이 <b>{disp_name}님</b>의 삶이라는 긴 여정에서 길을 잃지 않게 돕는 '나침반'이 되기를 진심으로 기원합니다.</p>
-<p style='text-indent: 15px; text-align: justify; line-height: 1.8; margin-bottom: 15px;'>앞으로 미래에 대한 더 깊은 시공간의 지혜와 궁금증이 있으시면 언제든 '초연 시공명리 연구소의 문'을 두드려 주십시오.</p>
+<p style='text-indent: 15px; text-align: justify; line-height: 1.8; margin-bottom: 8px;'>따라서 오늘의 '초연 전통명리와의 인연'이 <b>{disp_name}님</b>의 삶이라는 긴 여정에서 길을 잃지 않게 돕는 '나침반'이 되기를 진심으로 기원합니다.</p>
+<p style='text-indent: 15px; text-align: justify; line-height: 1.8; margin-bottom: 15px;'>앞으로 미래에 대한 더 깊은 전통명리의 지혜와 궁금증이 있으시면 언제든 '초연 전통명리 연구소의 문'을 두드려 주십시오.</p>
 <p style='text-indent: 15px; font-size: 16px; line-height: 1.8; font-weight: bold; margin-bottom: 0px;'>오늘 닿은 귀한 인연에 다시 한 번 감사드립니다.</p>
 <div style='text-align: right; margin-top: 30px;'>
-<span style='font-weight: 900; font-size: 18px; color: #1A237E;'>- 초연 시공명리 연구소 드림 -</span>
+<span style='font-weight: 900; font-size: 18px; color: #1A237E;'>- 초연 전통명리 연구소 드림 -</span>
 </div>
 </div>"""
 
-            # [수술부위 1] 프롬프트에 격국 상세 팩트 및 소설 작성 금지령 엄수
+            # [수술부위 6] 하이브리드 대중화 용어 병기 룰 + 공망 논리 완벽 탑재
             prompt = f"""
 [절대 규칙]
 1. 현재 시스템 시간: 2026년(丙午년) {curr_m}월({cur_wol_g}{cur_wol_j}월)
@@ -558,17 +561,24 @@ if btn_single or btn_compare:
 1번~11번 모든 항목은 평면적 해석을 금지하며, 반드시 [육친적(관계), 심리적(내면), 사회적(직업/재물)] 3차원 관점을 융합하여 풀이하십시오.
 현재 혼인 상태: '{u_marital}' -> (미혼: 이성/연인/독립성 강조, 시댁/처가 언급 금지. 기혼: 배우자/가정/시댁/처가 현실적 갈등 및 조화. 돌싱: 과거 상처 극복, 새로운 인연, 독립적 삶 위주).
 
-[🚨 핵심 팩트 강제 지시 (이 팩트를 바탕으로 십성/12운성을 가감 풀이할 것)]
+[🌟 대중 친화적 하이브리드 통변 강제 지시 (가장 중요!)]
+- 모든 명리 용어(십성, 신살, 오행 등)는 절대로 단독으로 쓰지 마십시오.
+- 반드시 [대중이 이해하기 쉬운 현대적 구어체 표현] + (명리용어) 형태로 병기하십시오.
+  예시 1) "재능을 통한 현실적 성취(식신생재)의 흐름이 좋습니다."
+  예시 2) "책임감과 수용력(관인상생)이 돋보입니다."
+  예시 3) "타고난 매력으로 시선을 끄는 기운(도화살)이 있습니다."
+- 문체는 지인에게 따뜻한 차를 내어주며 상담하듯 부드럽고 긍정적인 구어체(예: ~습니다, ~하는 편이네요, ~하시면 좋습니다)를 사용하십시오. 흉살이 있어도 장점으로 승화시켜 희망과 위로를 주십시오.
+
+[🚨 핵심 팩트 강제 지시]
 - {disp_name}님의 격국(格局) 팩트: [{gyukgook_detail}] 
-  -> [경계령 0-격국 소설 금지] 위 격국 산출 과정(투출 여부)을 절대 임의로 왜곡하지 마십시오. 투출되지 않았는데 '하늘에 투영되었다'는 등 지어내어 설명하면 명리학적 중대 오류입니다. 팩트 그대로만 서술하십시오.
-- 공망(空亡): {i_gong} (성격 분석 시 이 실체적 결핍을 인종법과 함께 분석)
+- 공망(空亡) 팩트: [년주 기준 공망: {n_gong}, 일주 기준 공망: {i_gong}]
+  -> [통변 지시] 년공망은 "조상의 무대나 초년/사회적 환경에서의 채워지지 않는 결핍"으로, 일공망은 "개인적 내면이나 배우자/중년 이후의 결핍"으로 나누어 대중이 이해하기 쉽게(하이브리드 병기법 적용) 설명하십시오.
 - 일반신살: [{shinsal_str}] / 12신살: [{s12_str}]
-- [경계령 1-저승사자] 12신살 중 '육해살, 천살, 겁살'이 원국이나 운에 있다면 예측불허의 작용을 엄중히 경고.
+- [경계령 1-저승사자] 12신살 중 '육해살, 천살, 겁살'이 원국이나 운에 있다면 예측불허의 작용을 엄중히 경고하되, 쉬운 언어로 풀어주십시오.
 - [경계령 2-삼형살 지뢰] {samhyung_warn}
-- [경계령 3-운의 동적 시뮬레이션] 운에서 도화살, 망신살, 역마살, 고신/과숙살 발현 시 구체적 사건 통변.
-- [경계령 4-시간의 현재성] 내담자의 현재 대운은 정확히 [{current_daewun_fact}]입니다. 과거 대운 풀이 시 엉뚱한 대운을 현재로 착각하지 마십시오.
-- [경계령 5-요약 누락 금지] 과거 대운, 세운, 월운 요약 시 절대로 중간(1월, 2월 등이나 초년 대운)을 건너뛰지 말고 1대운부터 현재 직전까지, 1월부터 순차적으로 단 하나도 빠짐없이 전수 요약하십시오.
-- [경계령 6-명리 달력의 엄격성] 월운 요약 시, 양력 1월은 무조건 해가 바뀌기 전인 '전년도 축(丑)월'의 기운으로 풀이하고, 2월(인월)부터 새해 기운을 적용하십시오.
+- [경계령 3-시간의 현재성] 내담자의 현재 대운은 정확히 [{current_daewun_fact}]입니다. 
+- [경계령 4-요약 누락 금지] 과거 대운, 세운, 월운 요약 시 중간을 건너뛰지 말고 1대운부터 현재 직전까지, 1월부터 순차적으로 단 하나도 빠짐없이 전수 요약하십시오.
+- [경계령 5-명리 달력의 엄격성] 월운 요약 시, 양력 1월은 무조건 '전년도 축(丑)월'의 기운으로 풀이하고, 2월(인월)부터 새해 기운을 적용하십시오.
 
 실제 대운 흐름: {daewun_info_str}
 실제 세운 흐름: {sewun_info_str}
@@ -637,6 +647,7 @@ if btn_single or btn_compare:
                 if un_html not in ai_text:
                     ai_text = un_html + se_html + wol_html + "<div style='color:red;'>⚠️ AI가 템플릿 마커를 누락하여 표가 최상단에 출력되었습니다.</div>" + ai_text
 
+                # [수술부위 7] 메인 타이틀 명칭 완벽 교체
                 report_1_full_html = f"""<div class='report-page'>
 <div class='vip-inset-frame' style='border-color:#1A237E;'>
 <h1 style='text-align:center;'>🔬 [초연 전통명리 사주풀이]</h1>
