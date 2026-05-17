@@ -12,7 +12,7 @@ import streamlit.components.v1 as components
 # ==============================================================================
 # 0. VIP 인셋 프레임 및 초강력 프린트 CSS 
 # ==============================================================================
-st.set_page_config(page_title="초연 전통명리 사주풀이 Ver 13.11", layout="wide")
+st.set_page_config(page_title="초연 전통명리 사주풀이 Ver 13.20", layout="wide")
 
 st.markdown("""
 <style>
@@ -315,7 +315,7 @@ def get_daeun_su_accurate(utc_dt, order):
 # ==============================================================================
 with st.sidebar:
     st.title("🧪 초연 임상 연구소")
-    st.caption("Ver 13.11 Masterpiece")
+    st.caption("Ver 13.20 Masterpiece")
     
     with st.expander("🔍 사주팔자 역산 검색", expanded=False):
         col_g1, col_g2 = st.columns(2)
@@ -373,7 +373,6 @@ with st.sidebar:
     u_t = st.selectbox("태어난 시간", idx_list, key="s_t")
     
     st.markdown("<br>", unsafe_allow_html=True)
-    # [수술부위 1] 버튼 이름 변경
     btn_single = st.button("🚀 초연 전통명리 사주풀이", use_container_width=True, type="primary")
     
     st.markdown("---")
@@ -388,16 +387,20 @@ with st.sidebar:
 if btn_single or btn_compare:
     if btn_compare and not comp_text.strip(): st.warning("⚠️ 타 술사 감명서를 입력하세요.")
     else:
-        # [수술부위 2] 로딩 텍스트 변경
-        spinner_msg = "두 감명서를 1:1 상세 비교 분석 중...." if btn_compare else "초연 전통명리 사주풀이 분석 중..."
+        # [Ver 13.20 적용] 로딩창 버전 명시
+        spinner_msg = "두 감명서를 1:1 상세 비교 분석 중...." if btn_compare else "초연 전통명리 사주풀이(Ver 13.20) 분석 중..."
         
         with st.spinner(spinner_msg):
             klc = KoreanLunarCalendar()
             if u_cal == "양력": klc.setSolarDate(u_y, u_m, u_d)
             else: klc.setLunarDate(u_y, u_m, u_d, False)
             
+            # [Ver 13.20 적용] 윤달/평달 달력 디테일 추가
+            is_leap = getattr(klc, 'isIntercalary', False)
+            leap_str = "윤달" if is_leap else "평달"
+            
             sol_str = f"{klc.solarYear}년 {klc.solarMonth:02d}월 {klc.solarDay:02d}일"
-            lun_str = f"{klc.lunarYear}년 {klc.lunarMonth:02d}월 {klc.lunarDay:02d}일"
+            lun_str = f"{klc.lunarYear}년 {klc.lunarMonth:02d}월 {klc.lunarDay:02d}일 ({leap_str})"
             
             curr_y = 2026
             curr_m = 5
@@ -416,7 +419,7 @@ if btn_single or btn_compare:
             
             def td(c, size="18px"): return f"<td class='color-{get_color(c)}' style='font-size:{size}; font-weight:900; border:1px solid #444 !important;'>{('?' if c in ['?',' ','-'] else c)}</td>"
             
-            # [수술부위 3] 합형충파해 가로 줄눈 완벽 제거 (맨 바닥 선만 남김)
+            # [Ver 13.20 적용] 합형충파해 가로 줄눈 완벽 제거
             ji_rel_rows = ""
             for l_idx, r_idx in enumerate([1, 2, 0, 3]):
                 b_bot = "1px solid #444" if l_idx == 3 else "none"
@@ -482,7 +485,6 @@ if btn_single or btn_compare:
             direction_str = "순행" if order == 1 else "역행"
             calc_d = get_daeun_su_accurate(utc_dt, order)
             
-            # [수술부위 4] 마스터바 뷰 정비 및 공망 간격 확대
             n_gong = calculate_gongmang(ys, yb)
             i_gong = calculate_gongmang(ds, db)
             
@@ -537,7 +539,6 @@ if btn_single or btn_compare:
                 wol_html += f"<div style='flex:1; border-left:{b_left}; text-align:center; padding-bottom:3px; background-color:{bg_col};'><div style='background-color:#3E2723; color:#FFFFFF; font-weight:900; padding:4px 0; font-size:12px; border-bottom:1px solid #ccc;'>{tm}월</div><div style='padding:2px; font-size:12px;'>{get_ss(ds,tc)}</div><div class='color-{get_color(tc)}' style='font-size:16px; font-weight:900;'>{tc}</div><div class='color-{get_color(tj)}' style='font-size:16px; font-weight:900;'>{tj}</div><div style='padding:2px; font-size:12px;'>{get_ss(ds,tj)}</div><div style='font-size:11px; border-top:1px solid #ccc;'>{get_unsung(ds,tj)}</div><div style='font-size:11px; color:#C62828; border-top:1px solid #ccc;'>{get_12_shinsal(yb, tj)}</div></div>"
             wol_html += "</div>"
             
-            # [수술부위 5] 모든 '시공' 명칭을 '전통'으로 완전 변경
             closing_html = f"""<div style='margin-top: 30px;'>
 <p style='text-indent: 15px; text-align: justify; line-height: 1.8; margin-bottom: 8px;'>'사주팔자(命)'는 태어날 때 부여받은 변하지 않는 '바코드(bar-code)'와 같지만, 우리가 살아가며 마주하는 '스캐너(scanner)'인 '운(運)'은 늘 변화하며 흐릅니다.</p>
 <p style='text-indent: 15px; text-align: justify; line-height: 1.8; margin-bottom: 8px;'>따라서 오늘의 '초연 전통명리와의 인연'이 <b>{disp_name}님</b>의 삶이라는 긴 여정에서 길을 잃지 않게 돕는 '나침반'이 되기를 진심으로 기원합니다.</p>
@@ -548,11 +549,11 @@ if btn_single or btn_compare:
 </div>
 </div>"""
 
-            # [수술부위 6] 하이브리드 대중화 용어 병기 룰 + 공망 논리 완벽 탑재
+            # [Ver 13.20 적용] 6대 혁신 프롬프트 완벽 장착
             prompt = f"""
 [절대 규칙]
 1. 현재 시스템 시간: 2026년(丙午년) {curr_m}월({cur_wol_g}{cur_wol_j}월)
-2. 응답의 첫 글자는 무조건 <h3 style='color:#1A237E;'>1. 분석</h3> 으로 시작하십시오. (인사말 절대 금지)
+2. 응답의 첫 글자는 무조건 <h3 style='color:#1A237E;'>1. 사주팔자 구조 분석</h3> 으로 시작하십시오. (인사말 절대 금지)
 3. 절대 들여쓰기를 하지 마십시오. 표(Table)는 절대 직접 그리지 마십시오.
 4. [DAEWUN_TABLE_HERE] 등 마커는 파이썬 치환용이므로 절대 지우지 마십시오.
 5. [강제] 응답의 모든 문장에서 '내담자'라는 단어 사용 절대 금지. 반드시 [{disp_name}님]을 사용하여 서술하십시오.
@@ -566,30 +567,36 @@ if btn_single or btn_compare:
 - 반드시 [대중이 이해하기 쉬운 현대적 구어체 표현] + (명리용어) 형태로 병기하십시오.
   예시 1) "재능을 통한 현실적 성취(식신생재)의 흐름이 좋습니다."
   예시 2) "책임감과 수용력(관인상생)이 돋보입니다."
-  예시 3) "타고난 매력으로 시선을 끄는 기운(도화살)이 있습니다."
+- [한자 100% 표기 규칙] '甲목', '己토', '亥수' 처럼 한글과 한자를 섞어 쓰지 마십시오. 반드시 '甲木', '己土', '亥水', '甲庚충', '午未합' 등 천간/지지를 100% 한자(漢字)로 표기하십시오.
+- [궁성 스토리텔링 강제] 합형충파해 설명 시 기계적으로 나열하지 말고, 반드시 각 지지(자리)가 상징하는 육친과 의미를 엮어 풀이하십시오.
+  예시) "나의 사회적 무대와 직장(월지 亥水), 자녀와 아랫사람(시지 卯木), 그리고 개인적 기반이자 배우자 자리(일지 未土)가 서로 단단하게 결속(亥卯未 삼합)하여..."
+- [십이운성 3D 결합 강제] 십성(육친)을 통변할 때, 반드시 해당 기둥의 십이운성(十二運星)이 부여하는 에너지의 강약과 상태를 결합하여 입체적으로 통변하십시오.
+  예시) "책임감과 명예를 상징하는 기운(정관)이 가장 왕성하고 독립적인 에너지인 (건록/建祿)을 깔고 앉아..."
 - 문체는 지인에게 따뜻한 차를 내어주며 상담하듯 부드럽고 긍정적인 구어체(예: ~습니다, ~하는 편이네요, ~하시면 좋습니다)를 사용하십시오. 흉살이 있어도 장점으로 승화시켜 희망과 위로를 주십시오.
 
 [🚨 핵심 팩트 강제 지시]
 - {disp_name}님의 격국(格局) 팩트: [{gyukgook_detail}] 
 - 공망(空亡) 팩트: [년주 기준 공망: {n_gong}, 일주 기준 공망: {i_gong}]
-  -> [통변 지시] 년공망은 "조상의 무대나 초년/사회적 환경에서의 채워지지 않는 결핍"으로, 일공망은 "개인적 내면이나 배우자/중년 이후의 결핍"으로 나누어 대중이 이해하기 쉽게(하이브리드 병기법 적용) 설명하십시오.
+  -> [통변 지시] 년공망은 "조상의 무대나 초년/사회적 환경에서의 채워지지 않는 결핍"으로, 일공망은 "개인적 내면이나 배우자/중년 이후의 결핍"으로 나누어 대중이 이해하기 쉽게 설명하십시오.
 - 일반신살: [{shinsal_str}] / 12신살: [{s12_str}]
-- [경계령 1-저승사자] 12신살 중 '육해살, 천살, 겁살'이 원국이나 운에 있다면 예측불허의 작용을 엄중히 경고하되, 쉬운 언어로 풀어주십시오.
-- [경계령 2-삼형살 지뢰] {samhyung_warn}
-- [경계령 3-시간의 현재성] 내담자의 현재 대운은 정확히 [{current_daewun_fact}]입니다. 
-- [경계령 4-요약 누락 금지] 과거 대운, 세운, 월운 요약 시 중간을 건너뛰지 말고 1대운부터 현재 직전까지, 1월부터 순차적으로 단 하나도 빠짐없이 전수 요약하십시오.
-- [경계령 5-명리 달력의 엄격성] 월운 요약 시, 양력 1월은 무조건 '전년도 축(丑)월'의 기운으로 풀이하고, 2월(인월)부터 새해 기운을 적용하십시오.
+  -> [특수 지시] 사주표에 일주(日柱) 태극귀인(太極貴人)이 있다면 조상의 든든한 음덕과 웅장한 마무리를 돕는 수호천사 기운으로 비중 있게 통변하십시오.
+  -> [환각 금지] AI는 신살(백호대살 등)의 '위치'를 임의로 지어내지(환각) 마십시오. 정확한 기둥을 모르면 '사주 원국에 강한 에너지가 있어' 정도로만 통변하십시오.
+- [경계령 1-지지의 역동성] 분석 순서는 [합 ➡️ 형 ➡️ 충 ➡️ 파 ➡️ 해] 순서를 엄수하십시오. 표에 '원진살, 귀문관살, 천라지망'이 도출되었다면 예민함과 환경적 제약성을 철저히 통변하십시오.
+- [경계령 2-저승사자 & 지뢰] 12신살 '육해살, 천살, 겁살' 및 삼형살({samhyung_warn}) 경고.
+- [경계령 3-시간의 현재성] 내담자의 현재 대운은 정확히 [{current_daewun_fact}]입니다. 과거 대운 풀이 시 엉뚱한 대운을 현재로 착각하지 마십시오.
+- [경계령 4-요약 누락 금지] 과거 대운, 세운, 월운 요약 시 중간을 건너뛰지 말고 단 하나도 빠짐없이 전수 요약하십시오.
+- [경계령 5-명리 달력의 엄격성] 월운 요약 시, 양력 1월은 무조건 '2026년 1월 (己丑월: 작년도 하반기 연장)' 형식으로 풀이하고 절대 생략하지 마십시오.
 
 실제 대운 흐름: {daewun_info_str}
 실제 세운 흐름: {sewun_info_str}
 사주: {ys}{yb}년 {ms}{mb}월 {ds}{db}일 {hs}{hb}시
 
 [출력 템플릿]
-<h3 style='color:#1A237E;'>1. 분석</h3>
+<h3 style='color:#1A237E;'>1. 사주팔자 구조 분석</h3>
 <div class='content-box-loose'>
-<p>1) 격국 및 무대 분석</p>
-<p>2) 조후 및 억부에 따른 주체성(용신) 분석</p>
-<p>3) 합형충해파 및 진술축미 분석</p>
+<p>1) 타고난 삶의 무대와 기본 성향 (격국)</p>
+<p>2) 내 삶의 온도와 에너지 균형 (조후/억부/용신)</p>
+<p>3) 사주팔자의 역동적 관계 분석 (합형충파해/진술축미)</p>
 </div>
 <h3 style='color:#1A237E;'>2. 성격</h3>
 <div class='content-box-loose'>
@@ -647,7 +654,6 @@ if btn_single or btn_compare:
                 if un_html not in ai_text:
                     ai_text = un_html + se_html + wol_html + "<div style='color:red;'>⚠️ AI가 템플릿 마커를 누락하여 표가 최상단에 출력되었습니다.</div>" + ai_text
 
-                # [수술부위 7] 메인 타이틀 명칭 완벽 교체
                 report_1_full_html = f"""<div class='report-page'>
 <div class='vip-inset-frame' style='border-color:#1A237E;'>
 <h1 style='text-align:center;'>🔬 [초연 전통명리 사주풀이]</h1>
