@@ -12,7 +12,7 @@ import streamlit.components.v1 as components
 # ==============================================================================
 # 0. VIP 인셋 프레임 및 초강력 프린트 CSS 
 # ==============================================================================
-st.set_page_config(page_title="초연 전통명리 사주풀이 Ver 13.20", layout="wide")
+st.set_page_config(page_title="초연 전통명리 사주풀이 Ver 13.21", layout="wide")
 
 st.markdown("""
 <style>
@@ -315,7 +315,7 @@ def get_daeun_su_accurate(utc_dt, order):
 # ==============================================================================
 with st.sidebar:
     st.title("🧪 초연 임상 연구소")
-    st.caption("Ver 13.20 Masterpiece")
+    st.caption("Ver 13.21 Masterpiece")
     
     with st.expander("🔍 사주팔자 역산 검색", expanded=False):
         col_g1, col_g2 = st.columns(2)
@@ -364,7 +364,8 @@ with st.sidebar:
     u_gender = st.selectbox("성별", ["남성", "여성"])
     u_marital = st.selectbox("혼인여부", ["미혼", "기혼", "돌싱"])
     
-    u_cal = st.selectbox("달력", ["양력", "음력"])
+    # [Ver 13.21] 달력 입력 UI 3분할 
+    u_cal = st.selectbox("달력", ["양력", "음력(평달)", "음력(윤달)"])
     col1, col2, col3 = st.columns(3)
     u_y = col1.number_input("년", 1900, 2030, key="s_y")
     u_m = col2.number_input("월", 1, 12, key="s_m")
@@ -387,15 +388,19 @@ with st.sidebar:
 if btn_single or btn_compare:
     if btn_compare and not comp_text.strip(): st.warning("⚠️ 타 술사 감명서를 입력하세요.")
     else:
-        # [Ver 13.20 적용] 로딩창 버전 명시
-        spinner_msg = "두 감명서를 1:1 상세 비교 분석 중...." if btn_compare else "초연 전통명리 사주풀이(Ver 13.20) 분석 중..."
+        spinner_msg = "두 감명서를 1:1 상세 비교 분석 중...." if btn_compare else "초연 전통명리 사주풀이(Ver 13.21) 분석 중..."
         
         with st.spinner(spinner_msg):
             klc = KoreanLunarCalendar()
-            if u_cal == "양력": klc.setSolarDate(u_y, u_m, u_d)
-            else: klc.setLunarDate(u_y, u_m, u_d, False)
             
-            # [Ver 13.20 적용] 윤달/평달 달력 디테일 추가
+            # [Ver 13.21] 달력 변환 엔진 윤달 분기 로직 적용
+            if u_cal == "양력": 
+                klc.setSolarDate(u_y, u_m, u_d)
+            elif u_cal == "음력(평달)": 
+                klc.setLunarDate(u_y, u_m, u_d, False)
+            else: 
+                klc.setLunarDate(u_y, u_m, u_d, True)
+            
             is_leap = getattr(klc, 'isIntercalary', False)
             leap_str = "윤달" if is_leap else "평달"
             
@@ -419,7 +424,6 @@ if btn_single or btn_compare:
             
             def td(c, size="18px"): return f"<td class='color-{get_color(c)}' style='font-size:{size}; font-weight:900; border:1px solid #444 !important;'>{('?' if c in ['?',' ','-'] else c)}</td>"
             
-            # [Ver 13.20 적용] 합형충파해 가로 줄눈 완벽 제거
             ji_rel_rows = ""
             for l_idx, r_idx in enumerate([1, 2, 0, 3]):
                 b_bot = "1px solid #444" if l_idx == 3 else "none"
@@ -549,7 +553,6 @@ if btn_single or btn_compare:
 </div>
 </div>"""
 
-            # [Ver 13.20 적용] 6대 혁신 프롬프트 완벽 장착
             prompt = f"""
 [절대 규칙]
 1. 현재 시스템 시간: 2026년(丙午년) {curr_m}월({cur_wol_g}{cur_wol_j}월)
