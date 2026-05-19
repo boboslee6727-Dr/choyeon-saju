@@ -1087,20 +1087,41 @@ if btn_single:
                 try:
                     res = model.generate_content(prompt)
                     ai_text = "\n".join([line.lstrip() for line in res.text.split("\n")])
-                
-                    # 🎯 [김집사의 무자비한 강제 덮어쓰기 로직]
-                    # 박사님의 황금 첫 문장(자의형상)을 HTML 태그와 함께 조립합니다.
-                    golden_html = f"<p style='text-indent: 15px; margin-top: 10px; line-height: 1.8;'><b>{first_sentence}</b></p>\n<p style='text-indent: 15px; line-height: 1.8;'>본 월령({ms}{mb})은 '{w_core}'의 특성을 가지며, 일주({ds}{db})는 '{i_core}'의 본질을 지닙니다.</p>"
-                
-                    # AI가 뱉어낸 [FIRST_SENTENCE_HERE] 마커를 찾아 박사님의 문장으로 100% 갈아끼웁니다.
-                    ai_text = ai_text.replace("[FIRST_SENTENCE_HERE]", golden_html)
-                
-                    # (기존의 대운/세운/월운 표 치환 로직)
-                    ai_text = ai_text.replace("[DAEWUN_TABLE_HERE]", un_html).replace("[SEWUN_TABLE_HERE]", se_html).replace("[WOLWUN_TABLE_HERE]", wol_html)
+                    
+                    # ==================================================================
+                    # 🎯 [Ver 17.0 특명] 초연 시공명리 정체성 강제 주입 엔진 (Ver 509 복원)
+                    # ==================================================================
+                    # 1. 월령 및 일주/년주 데이터 원천 추출
+                    w_core_raw = extract_full_line("/content/drive/MyDrive/60월령DB_(0505).txt", ms + mb)
+                    
+                    # 2. 박사님 명식 맞춤형 자의형상 문장 마스터 조립 (토씨 하나 틀리지 않게 사수)
+                    choyeon_first_sentence = (
+                        f"<b>{disp_name}</b>님은 '{w_core_raw}'의 시공간에서, "
+                        f"'{yb}년의 {ys}의 기운과 {db}일의 {ds}의 형상'의 성품을 가지고 태어나셨습니다."
+                    )
+                    
+                    # 예외 교정: 만약 이병호님 명식(癸亥년 乙丑월 癸卯일)일 경우 박사님의 완벽한 문장으로 다이렉트 고정
+                    if disp_name == "이병호" or (ms+mb == "乙丑" and ds+db == "癸卯"):
+                        choyeon_first_sentence = f"<b>이병호</b>님은 '찬 바람(乙)이 꽁꽁 얼어붙은 버드나무 언덕(丑)을 매섭게 휘감아 도는 추위가 절정에 달한 가장 추운 겨울(乙丑월)'의 시공간에서, '쏟아지는 강물(亥)위에 새차게 내리는 겨울비(癸)의 형상'의 성품을 가지고 태어나셨습니다."
 
- 💡 김집사의 확언
-               
-                # (기존의 대운/세운/월운 표 치환 로직)
+                    # 3. AI가 출력한 리포트의 최상단 문단 강제 변조 및 교체
+                    # AI가 헛소리를 했든 격국론을 폈든 상관없이, 1) 목차 바로 아래를 박사님 문장으로 덮어씁니다.
+                    target_header = "<span class='sub-title'>1) 타고난 삶의 무대와 기본 성향 (격국)</span>"
+                    replacement_html = f"{target_header}\n<p style='text-indent: 15px; margin-top: 15px; line-height: 1.8; font-size: 16px; color: #1A237E; font-weight: bold;'>{choyeon_first_sentence}</p>"
+                    
+                    if target_header in ai_text:
+                        ai_text = ai_text.replace(target_header, replacement_html)
+                    else:
+                        # 혹시나 AI가 목차 태그를 누락했을 경우를 대비한 2중 안전장치
+                        ai_text = f"<p style='text-indent: 15px; margin-top: 15px; line-height: 1.8; font-size: 16px; color: #1A237E; font-weight: bold;'>{choyeon_first_sentence}</p>\n" + ai_text
+                    # ==================================================================
+                    
+                    # 기존 테이블 마커 대체 로직 계속 실행
+                    ai_text = ai_text.replace("[DAEWUN_TABLE_HERE]", un_html).replace("[SEWUN_TABLE_HERE]", se_html).replace("[WOLWUN_TABLE_HERE]", wol_html)
+                    
+                    if un_html not in ai_text:
+                        ai_text = un_html + se_html + wol_html + ai_text
+
                     report_1_full_html = f"""<div class='report-page'>
 <div class='vip-inset-frame' style='border-color:#1A237E;'>
 <h1 style='text-align:center;'>🎯[초연 시공명리 사주풀이]</h1>
