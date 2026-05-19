@@ -1034,6 +1034,7 @@ if btn_single:
 <h3 style='color:#1A237E;'>1. 사주팔자 구조 분석</h3>
 <div class='content-box-loose'>
 <span class='sub-title'>1) 타고난 삶의 무대와 기본 성향 (격국)</span>
+[FIRST_SENTENCE_HERE]
 <span class='sub-title'>2) 내 삶의 온도와 에너지 균형 (조후/억부/용신)</span>
 <span class='sub-title'>3) 사주팔자의 역동적 관계 분석 (합형충파해/진술축미)</span>
 </div>
@@ -1086,12 +1087,20 @@ if btn_single:
                 try:
                     res = model.generate_content(prompt)
                     ai_text = "\n".join([line.lstrip() for line in res.text.split("\n")])
-                    
+                
+                    # 🎯 [김집사의 무자비한 강제 덮어쓰기 로직]
+                    # 박사님의 황금 첫 문장(자의형상)을 HTML 태그와 함께 조립합니다.
+                    golden_html = f"<p style='text-indent: 15px; margin-top: 10px; line-height: 1.8;'><b>{first_sentence}</b></p>\n<p style='text-indent: 15px; line-height: 1.8;'>본 월령({ms}{mb})은 '{w_core}'의 특성을 가지며, 일주({ds}{db})는 '{i_core}'의 본질을 지닙니다.</p>"
+                
+                    # AI가 뱉어낸 [FIRST_SENTENCE_HERE] 마커를 찾아 박사님의 문장으로 100% 갈아끼웁니다.
+                    ai_text = ai_text.replace("[FIRST_SENTENCE_HERE]", golden_html)
+                
+                    # (기존의 대운/세운/월운 표 치환 로직)
                     ai_text = ai_text.replace("[DAEWUN_TABLE_HERE]", un_html).replace("[SEWUN_TABLE_HERE]", se_html).replace("[WOLWUN_TABLE_HERE]", wol_html)
-                    
-                    if un_html not in ai_text:
-                        ai_text = un_html + se_html + wol_html + "<div style='color:red;'>⚠️ AI가 템플릿 마커를 누락하여 표가 최상단에 출력되었습니다.</div>" + ai_text
 
+ 💡 김집사의 확언
+               
+                # (기존의 대운/세운/월운 표 치환 로직)
                     report_1_full_html = f"""<div class='report-page'>
 <div class='vip-inset-frame' style='border-color:#1A237E;'>
 <h1 style='text-align:center;'>🎯[초연 시공명리 사주풀이]</h1>
